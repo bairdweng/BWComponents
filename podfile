@@ -1,9 +1,0 @@
-
-platform :ios, '10.0'
-use_frameworks!
-target 'BWComponents' do
-    pod 'FDFullscreenPopGesture'
-    pod 'YYText'
-    pod 'YYCategories'
-    pod 'Masonry'
-end
