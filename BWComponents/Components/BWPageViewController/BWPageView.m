@@ -10,7 +10,7 @@
 @interface BWPageView ()<UIScrollViewDelegate>
 /// 主的视图控制器
 @property(nonatomic, strong)UIScrollView *mainScrollView;
-/// 修改了啊
+/// 修改了啊我是ken
 @property(nonatomic, strong)NSMutableArray *items;
 @property(nonatomic, assign)CGFloat headerHeight;
 @property(nonatomic, strong)UIView *headerView;
