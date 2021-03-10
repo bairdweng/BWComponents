@@ -8,10 +8,8 @@
 #import "BWPageView.h"
 #import <Masonry.h>
 @interface BWPageView ()<UIScrollViewDelegate>
-/// 主的视图控制器
+
 @property(nonatomic, strong)UIScrollView *mainScrollView;
-/// 修改了啊我是ken
-/// ken第二次修改
 @property(nonatomic, strong)NSMutableArray *items;
 @property(nonatomic, assign)CGFloat headerHeight;
 @property(nonatomic, strong)UIView *headerView;
@@ -40,7 +38,8 @@
         self.headerView.frame = frame;
     }
 }
-
+#pragma mark 滚动同步
+// 控制顶部视图。
 - (CGFloat)offfsetY:(CGFloat)y {
     CGFloat ny = -y;
     if (ny > 0) {
@@ -52,9 +51,18 @@
     return ny;
 }
 
+// 当主滚动视图滚动的时，同步scro
+- (void)syncOffsetY:(UIScrollView *)scro {
+    CGFloat y = (self.headerView.frame.origin.y) * -1;
+    scro.contentOffset = CGPointMake(0, y);
+}
 
-- (void)layoutSubviews {
-    [super layoutSubviews];
+// 当滚动区域小于SizeHeight时，自动滚动到0
+- (void)friendlyScroIndex:(NSInteger)index {
+    UIScrollView *scro = self.scroViews[index];
+    if (scro.contentSize.height <= scro.frame.size.height) {
+        [scro setContentOffset:CGPointMake(0, 0) animated:YES];
+    }
 }
 
 - (void)reloadData {
@@ -74,8 +82,8 @@
         self.headerView = [self.dataSources headerView];
         [self setHeaderView];
     }
-    
     [self loadSubViewIndex:0];
+    [self kvoScrollIndex:0];
 }
 
 
@@ -105,18 +113,41 @@
     return _mainScrollView;
 }
 
+
+#pragma mark scrollViewDelegate
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     NSInteger page = scrollView.contentOffset.x / CGRectGetWidth(self.bounds);
     self.currentIndex = page;
     [self loadSubViewIndex:page];
+    [self kvoScrollIndex:page];
+    [self friendlyScroIndex:page];
 }
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    [self.scroViews enumerateObjectsUsingBlock:^(UIScrollView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        // 同步Scroll
+        if (idx != self.currentIndex) {
+            [self syncOffsetY:obj];
+        }
+    }];
+}
+
+// 只kvo当前显示的
+- (void)kvoScrollIndex:(NSInteger)index {
+    [self.scroViews enumerateObjectsUsingBlock:^(UIScrollView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (idx == index) {
+            [obj addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew context:nil];
+        }
+    }];
+}
+
 - (void)loadSubViewIndex:(NSInteger)page {
     NSString *pageKey = [NSString stringWithFormat:@"view_key_%ld",page];
     if ([self.items containsObject:pageKey]) {
         return;
     }
     if ([self.dataSources respondsToSelector:@selector(pageViewIndex:)]) {
-        id<BWPageViewDelegate>delegate =  [self.dataSources pageViewIndex:page];
+        id<BWPageViewDelegate>delegate = [self.dataSources pageViewIndex:page];
         if ([delegate isKindOfClass:[UIViewController class]]) {
             UIViewController *vc = (UIViewController *)delegate;
             [self.items addObject:pageKey];
@@ -127,28 +158,12 @@
                 make.bottom.top.width.equalTo(self);
             }];
             UIScrollView *scro = [delegate subScrollView];
-            [scro addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew context:nil];
             // 将高度传给子视图控制器。
             [delegate mainHeaderHeight:self.headerHeight];
             [self.scroViews addObject:scro];
-            
         } else {
             NSLog(@"回传的控制器不正确");
         }
     }
 }
-
-/*
- #pragma mark - Navigation
- 
- // In a storyboard-based application, you will often want to do a little preparation before navigation
- - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
- // Get the new view controller using [segue destinationViewController].
- // Pass the selected object to the new view controller.
- }
- */
-- (void)dealloc {
-    
-}
-
 @end

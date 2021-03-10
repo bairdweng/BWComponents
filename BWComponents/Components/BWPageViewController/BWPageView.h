@@ -39,9 +39,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 @interface BWPageView : UIView
+
 - (void)reloadData;
 @property(nonatomic, weak)id<BWPageViewDataSources>dataSources;
-//@property(nonatomic, weak)id<BWPageViewDelegate>delegate;
 
 @end
 
